@@ -1,9 +1,26 @@
+export interface TimetableEntry {
+  courseId: string;
+  courseName: string;
+  professor: string;
+  room: string;
+  day: "Mon" | "Tue" | "Wed" | "Thu" | "Fri";
+  period: 1 | 2 | 3 | 4 | 5 | 6;
+}
+
+export interface Timetable {
+  semester: string;
+  year: number;
+  entries: TimetableEntry[];
+}
+
 export interface User {
   id: string;
   username: string;
+  email?: string;
   totalNotes: number;
   totalUpvotes: number;
   coursesContributed: number;
+  timetables?: Timetable[];
 }
 
 export interface Note {
@@ -12,6 +29,8 @@ export interface Note {
   professorName: string;
   faculty: string;
   department: string;
+  year: number;
+  semester: "Spring" | "Fall";
   uploader: {
     username: string;
     id: string;
