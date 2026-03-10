@@ -43,10 +43,10 @@ function NavItems({ collapsed = false, onNavigate }: NavItemsProps) {
           onClick={onNavigate}
           className="flex items-center gap-1 hover:opacity-75 transition-opacity shrink-0"
         >
-          <img src="/logo.png" alt="Waseda Notes" className="h-7 w-7 object-contain shrink-0" />
+          <img src="/logo.png" alt="ManabiEcho" className="h-7 w-7 object-contain shrink-0" />
           {!collapsed && (
             <span className="text-sm font-semibold text-zinc-900 tracking-tight whitespace-nowrap">
-              Waseda Notes
+              ManabiEcho
             </span>
           )}
         </NavLink>
@@ -184,9 +184,9 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </SheetContent>
         </Sheet>
         <div className="flex items-center gap-1 ml-3">
-          <img src="/logo.png" alt="Waseda Notes" className="h-6 w-6 object-contain" />
+          <img src="/logo.png" alt="ManabiEcho" className="h-6 w-6 object-contain" />
           <span className="text-sm font-semibold text-zinc-900 tracking-tight">
-            Waseda Notes
+            ManabiEcho
           </span>
         </div>
       </div>

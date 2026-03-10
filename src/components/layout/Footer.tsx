@@ -8,9 +8,9 @@ export function Footer() {
           to="/browse"
           className="flex items-center gap-1 hover:opacity-75 transition-opacity"
         >
-          <img src="/logo.png" alt="Waseda Notes" className="h-6 w-6 object-contain" />
+          <img src="/logo.png" alt="ManabiEcho" className="h-6 w-6 object-contain" />
           <span className="text-sm font-semibold text-zinc-900 tracking-tight">
-            Waseda Notes
+            ManabiEcho
           </span>
         </Link>
 
@@ -36,7 +36,7 @@ export function Footer() {
             GitHub
           </a>
           <a
-            href="mailto:notes@waseda.jp"
+            href="mailto:hello@manabiecho.com"
             className="text-xs text-zinc-400 hover:text-zinc-900 transition-colors duration-150"
           >
             Contact
@@ -44,7 +44,7 @@ export function Footer() {
         </nav>
 
         <p className="text-xs text-zinc-300">
-          &copy; {new Date().getFullYear()} Waseda Notes
+          &copy; {new Date().getFullYear()} ManabiEcho
         </p>
       </div>
     </footer>

@@ -39,7 +39,7 @@ export function SignupPage() {
     <div>
       <div className="text-center mb-8">
         <h1 className="text-2xl font-medium text-zinc-900 mb-1">Create account</h1>
-        <p className="text-sm text-zinc-500">Join the Waseda Notes community.</p>
+        <p className="text-sm text-zinc-500">Join the ManabiEcho community.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -68,7 +68,7 @@ export function SignupPage() {
             autoComplete="email"
             value={form.email}
             onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-            placeholder="you@waseda.jp"
+            placeholder="you@manabiecho.com"
             className="w-full text-sm bg-zinc-100 border-0 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all"
           />
         </div>

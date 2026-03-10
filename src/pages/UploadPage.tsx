@@ -114,7 +114,7 @@ export function UploadPage() {
     <div className="max-w-4xl mx-auto px-6 py-10">
       <div className="mb-8">
         <h1 className="text-2xl font-medium text-zinc-900 mb-2">Upload notes</h1>
-        <p className="text-zinc-500 text-sm">Share with the Waseda community.</p>
+        <p className="text-zinc-500 text-sm">Share with the ManabiEcho community.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

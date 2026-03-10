@@ -8,7 +8,7 @@ export function AuthLayout() {
         to="/browse"
         className="hover:opacity-75 transition-opacity"
       >
-        <img src="/logo.png" alt="Waseda Notes" className="h-12 w-12 object-contain" />
+        <img src="/logo.png" alt="ManabiEcho" className="h-12 w-12 object-contain" />
       </Link>
 
       <div className="w-full max-w-sm">

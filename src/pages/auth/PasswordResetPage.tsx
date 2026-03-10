@@ -101,7 +101,7 @@ export function PasswordResetPage() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@waseda.jp"
+            placeholder="you@manabiecho.com"
             className="w-full text-sm bg-zinc-100 border-0 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all"
           />
         </div>
