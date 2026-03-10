@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
 import type { User, Note } from "@/types";
 import { getUserApi, getNotesByUploaderApi } from "@/services/api";
 import { NoteListItem } from "@/components/notes/NoteListItem";
@@ -50,14 +49,6 @@ export function ProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 mb-10 transition-colors duration-150 cursor-pointer"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        Back
-      </button>
-
       {/* Avatar + name */}
       <div className="mb-10">
         <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center text-lg font-semibold text-orange-600 mb-4">

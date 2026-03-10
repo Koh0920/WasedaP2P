@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { Note } from "@/types";
 import { mockFaculties } from "@/data/mockData";
@@ -112,14 +112,6 @@ export function UploadPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 mb-10 transition-colors duration-150 cursor-pointer"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        Back
-      </button>
-
       <div className="mb-8">
         <h1 className="text-2xl font-medium text-zinc-900 mb-2">Upload notes</h1>
         <p className="text-zinc-500 text-sm">Share with the Waseda community.</p>
