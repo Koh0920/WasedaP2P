@@ -20,7 +20,61 @@ import {
 } from "@/data/mockData";
 
 const _BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
-void _BASE_URL;
+
+interface AuthResponse {
+  user: User;
+  token: string;
+}
+
+interface CurrentUserResponse {
+  userid: number;
+  username: string;
+  email?: string | null;
+  full_name?: string | null;
+  disabled?: boolean | null;
+}
+
+interface MessageResponse {
+  message: string;
+}
+
+async function parseApiError(response: Response): Promise<string> {
+  try {
+    const data = await response.json() as { detail?: string };
+    if (typeof data.detail === "string" && data.detail.length > 0) {
+      return data.detail;
+    }
+  } catch {
+    // Ignore parse errors and fall back to the status text below.
+  }
+
+  return response.statusText || "Request failed";
+}
+
+async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  const response = await fetch(`${_BASE_URL}${path}`, {
+    credentials: "include",
+    ...init,
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseApiError(response));
+  }
+
+  return response;
+}
+
+function mapCurrentUserToFrontendUser(user: CurrentUserResponse): User {
+  return {
+    id: String(user.userid),
+    username: user.username,
+    email: user.email ?? undefined,
+    totalNotes: 0,
+    totalUpvotes: 0,
+    coursesContributed: 0,
+    timetables: [],
+  };
+}
 
 // ============================================================================
 // NOTES
@@ -154,18 +208,23 @@ export async function getUserApi(username: string): Promise<User | null> {
  * Used on: LoginPage
  * Backend: POST /api/auth/login
  * Payload: { email: string, password: string }
- * Returns: User object (including JWT token somehow?)
- *
- * Important: We need some way to persist the session. JWT in response?
- * Let us know what you guys prefer!
+ * Returns: User object, and stores the JWT token for later requests
  */
 export async function loginApi(
-  _email: string,
-  _password: string
+  email: string,
+  password: string
 ): Promise<User> {
-  // Mock: returns first user. Replace with real JWT endpoint.
-  await new Promise((r) => setTimeout(r, 500));
-  return mockUsers[0];
+  const response = await apiFetch("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await response.json() as AuthResponse;
+  localStorage.setItem("authToken", data.token);
+  return data.user;
 }
 
 /**
@@ -173,26 +232,67 @@ export async function loginApi(
  * Used on: SignupPage
  * Backend: POST /api/auth/signup
  * Payload: { username: string, email: string, password: string }
- * Returns: void (or maybe the new user object?)
- *
- * Quick note: We probably want to return the user + token on signup too
+ * Returns: void
  */
 export async function signupApi(data: {
   username: string;
   email: string;
   password: string;
 }): Promise<void> {
-  // Mock: just simulate a delay. Replace with real endpoint.
-  void data;
-  await new Promise((r) => setTimeout(r, 500));
+  const response = await apiFetch("/api/auth/signup", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+  const responseData = await response.json() as Partial<AuthResponse>;
+  if (typeof responseData.token === "string") {
+    localStorage.setItem("authToken", responseData.token);
+  }
+}
+
+export async function getCurrentUserApi(): Promise<User> {
+  const response = await apiFetch("/users/me/");
+  const data = await response.json() as CurrentUserResponse;
+  return mapCurrentUserToFrontendUser(data);
+}
+
+export async function logoutApi(): Promise<void> {
+  await apiFetch("/logout", {
+    method: "POST",
+  });
+  localStorage.removeItem("authToken");
+}
+
+export async function resetPasswordApi(email: string): Promise<string> {
+  const response = await apiFetch("/api/auth/reset-password", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+  const data = await response.json() as MessageResponse;
+  return data.message;
+}
+
+export async function verifyEmailApi(token: string): Promise<string> {
+  const response = await apiFetch("/api/auth/verify-email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ token }),
+  });
+  const data = await response.json() as MessageResponse;
+  return data.message;
 }
 
 
 // FUTURE STUFF (Not implemented yet)
 /*
  * Things we might need later:
- * - Password reset: POST /api/auth/reset-password
- * - Email verification: POST /api/auth/verify-email
  * - Timetable management: GET/POST /api/users/{username}/timetable
  * - File download: GET /api/notes/{id}/download
  * - Search: GET /api/notes/search?q=...

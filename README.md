@@ -1,109 +1,177 @@
 # WasedaP2P
 
-A peer-to-peer note-sharing platform for Waseda University students. Upload, browse, and vote on course notes from your peers.
+WasedaP2P is a full-stack project with:
 
----
+- `frontend/`: React + Vite
+- `backend/`: FastAPI + PostgreSQL
 
-## Tech Stack
+This README explains how to run the project locally from the repository root.
 
-- **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS + shadcn/ui
-- **Routing**: React Router v6
-- **State**: React Context + Hooks
+## Prerequisites
 
----
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 20+
-- npm or yarn
-
-### Installation
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-The app runs at `http://localhost:5173` by default.
-
-### Environment Variables
-
-Create a `.env` file in the root:
-
-```env
-VITE_API_URL=http://localhost:8000
-```
-
----
+- Node.js 18+ and `npm`
+- Python 3.10+
+- PostgreSQL 14+ running locally
 
 ## Project Structure
 
-```
-src/
-├── components/       # Reusable UI components
-│   ├── layout/       # AppLayout, Sidebar, Footer
-│   ├── notes/        # NoteCard, NoteListItem, ReportButton
-│   ├── profile/      # TimetableSection
-│   └── ui/           # shadcn/ui components (Button, Card, etc.)
-├── context/          # React Context (AuthContext)
-├── data/             # Mock data (temporary, for development)
-├── hooks/            # Custom hooks
-├── lib/              # Utilities
-├── pages/            # Route pages
-│   ├── auth/         # Login, Signup, PasswordReset, EmailVerification
-│   ├── BrowsePage.tsx
-│   ├── ForumPage.tsx
-│   ├── NoteDetailPage.tsx
-│   ├── ProfilePage.tsx
-│   └── UploadPage.tsx
-├── services/         # API layer (currently mock)
-├── types/            # TypeScript interfaces
-├── App.tsx           # Root component
-├── main.tsx          # Entry point
-└── router.tsx        # Route definitions
+```text
+WasedaP2P/
+├── backend/
+├── frontend/
+└── README.md
 ```
 
----
+## 1. Create the Database
 
-## API Integration
+Create a PostgreSQL database named `wasedap2p`.
 
-Currently, all API functions in `src/services/api.ts` return mock data. When the FastAPI backend is ready:
+Example with `psql`:
 
-1. Update `VITE_API_URL` in your `.env` file
-2. Replace each mock function with a real fetch call
+```bash
+psql -U postgres
+CREATE DATABASE wasedap2p;
+```
 
-See `.agent/api-guide.md` for the complete API specification.
+If you need more detail, see [backend/README.md](/Users/jihunpark/Desktop/개발/WasedaP2P/backend/README.md).
 
----
+## 2. Configure Backend Environment
 
-## Design System
+Create `backend/.env` from `backend/.env.template`.
 
-This project follows the **Swiss International Style + Notion Minimalism** design system. See `.agent/design.md` for:
+Example:
 
-- Color palette (Zinc grayscale + Orange accent)
-- Typography (Geist font, size hierarchy)
-- Component patterns (no borders, use spacing)
-- Accessibility guidelines
+```env
+SECRET_KEY=replace-with-a-long-random-secret
+ALGORITHM=HS256
+DATABASE_URL=postgresql+psycopg://jihunpark:jihunpark@localhost:5432/wasedap2p
 
----
+FRONTEND_URL=http://localhost:5173
 
-## Available Scripts
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM_EMAIL=your-email@gmail.com
+SMTP_USE_TLS=true
+SMTP_USE_SSL=false
+```
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Production build |
-| `npm run lint` | Run ESLint |
-| `npm run preview` | Preview production build |
+Notes:
 
----
+- `SMTP_PASSWORD` should be an app password if you use Gmail.
+- Do not keep placeholder values like `smtp.example.com`.
+- Restart the backend after changing `.env`.
 
-## License
+## 3. Install Frontend Dependencies
 
-MIT
+From the repository root:
+
+```bash
+cd frontend
+npm install
+```
+
+## 4. Install Backend Dependencies
+
+The backend does not currently include a `requirements.txt`, so install the packages used by the app manually in a virtual environment.
+
+Example:
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install fastapi uvicorn sqlalchemy psycopg python-dotenv passlib[argon2] pyjwt python-multipart
+```
+
+If `psycopg` is not installed correctly, also run:
+
+```bash
+pip install "psycopg[binary]"
+```
+
+## 5. Run the Backend
+
+From `backend/`:
+
+```bash
+uvicorn main:app --reload
+```
+
+The backend runs at:
+
+```text
+http://localhost:8000
+```
+
+On startup, it will:
+
+- create tables if they do not exist
+- apply the current runtime schema update for `email_verified`
+
+## 6. Run the Frontend
+
+In a separate terminal:
+
+```bash
+cd frontend
+npm run dev
+```
+
+The frontend runs at:
+
+```text
+http://localhost:5173
+```
+
+## 7. Login and Email Flow
+
+Current auth-related behavior:
+
+- signup calls `POST /api/auth/signup`
+- login calls `POST /api/auth/login`
+- session restore uses the backend auth cookie via `GET /users/me/`
+- signup sends a verification email
+- password reset sends a reset email
+
+For email features to work, the SMTP settings in `backend/.env` must be valid.
+
+## Useful Commands
+
+Frontend build:
+
+```bash
+cd frontend
+npm run build
+```
+
+Backend syntax check:
+
+```bash
+python3 -m py_compile backend/main.py
+```
+
+## Common Issues
+
+`400 Bad Request` on signup:
+
+- the username may already exist
+- check the frontend toast or backend response body for `detail`
+
+`500 Internal Server Error` during signup or reset email:
+
+- SMTP settings in `backend/.env` are invalid
+- the mail server may reject login
+- `SMTP_HOST` may still be a placeholder
+
+User appears signed out after refresh:
+
+- make sure backend and frontend are both running on the expected local URLs
+- make sure cookies are not being blocked
+
+## Current Limitations
+
+- backend dependencies are not yet pinned in a lockfile or `requirements.txt`
+- password reset currently sends an email link, but the final password update flow is not implemented in the backend yet
+- email verification is persisted in the database, but additional access rules for unverified users may still need to be enforced

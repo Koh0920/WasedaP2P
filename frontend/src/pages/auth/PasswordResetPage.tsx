@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { resetPasswordApi } from "@/services/api";
 
 export function PasswordResetPage() {
   const [searchParams] = useSearchParams();
@@ -15,9 +16,14 @@ export function PasswordResetPage() {
     e.preventDefault();
     if (!email) { toast.error("Please enter your email."); return; }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 700));
-    setLoading(false);
-    toast.success("Reset link sent. Check your inbox.");
+    try {
+      const message = await resetPasswordApi(email);
+      toast.success(message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to send reset link.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSetPassword = async (e: React.FormEvent) => {

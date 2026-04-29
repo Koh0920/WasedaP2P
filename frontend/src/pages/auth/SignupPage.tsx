@@ -28,8 +28,8 @@ export function SignupPage() {
     try {
       await signupApi({ username: form.username, email: form.email, password: form.password });
       navigate("/verify-email");
-    } catch {
-      toast.error("Sign up failed. Please try again.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sign up failed. Please try again.");
     } finally {
       setLoading(false);
     }
