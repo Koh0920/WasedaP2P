@@ -21,6 +21,21 @@ def get_user_id(db: Session, username: str):
 def get_user_by_id(db: Session, user_id: int):
     return db.query(UserModel).filter(UserModel.id == user_id).first()
 
+# Find a user by email
+def get_user_by_email(db: Session, email: str):
+    return db.query(UserModel).filter(UserModel.email == email).first()
+
+
+def mark_user_email_verified(db: Session, email: str):
+    user = get_user_by_email(db, email)
+    if not user:
+        return None
+
+    user.email_verified = True
+    db.commit()
+    db.refresh(user)
+    return user
+
 # Get all users
 def get_users(db:Session):
     return db.query(UserModel).all()
@@ -53,7 +68,8 @@ def create_user(db: Session, username: str, full_name: str | None, email: str, p
         full_name=full_name, 
         email=email, 
         hashed_password=hashed_password, 
-        role=UserRole.user
+        role=UserRole.user,
+        email_verified=False,
     )
 
     db.add(new_user)

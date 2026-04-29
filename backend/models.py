@@ -21,6 +21,7 @@ class UserModel(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.user)
     disabled = Column(Boolean, default=False)
+    email_verified = Column(Boolean, nullable=False, default=False)
 
     folders = relationship(
         "Folder",

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 import os
 from dotenv import load_dotenv
@@ -17,6 +17,18 @@ Base = declarative_base()
 
 def create_tables():
     Base.metadata.create_all(bind=engine)
+
+
+def ensure_schema_updates():
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                ALTER TABLE users
+                ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE
+                """
+            )
+        )
 
 def get_db():
     db = SessionLocal()

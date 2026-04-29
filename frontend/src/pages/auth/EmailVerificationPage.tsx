@@ -1,11 +1,47 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Mail } from "lucide-react";
 import { toast } from "sonner";
+import { verifyEmailApi } from "@/services/api";
 
 export function EmailVerificationPage() {
+  const [searchParams] = useSearchParams();
   const [resent, setResent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const verificationToken = searchParams.get("token");
+
+  useEffect(() => {
+    if (!verificationToken) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const verify = async () => {
+      setLoading(true);
+      try {
+        const message = await verifyEmailApi(verificationToken);
+        if (isMounted) {
+          toast.success(message);
+        }
+      } catch (error) {
+        if (isMounted) {
+          toast.error(error instanceof Error ? error.message : "Email verification failed.");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void verify();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [verificationToken]);
 
   const handleResend = async () => {
     setLoading(true);
@@ -23,8 +59,9 @@ export function EmailVerificationPage() {
 
       <h1 className="text-2xl font-medium text-zinc-900 mb-2">Check your inbox</h1>
       <p className="text-sm text-zinc-500 mb-8 leading-relaxed">
-        We sent a verification link to your student email address.
-        Click the link to activate your account.
+        {verificationToken
+          ? "We are verifying your email now. You can return to sign in after it completes."
+          : "We sent a verification link to your student email address. Click the link to activate your account."}
       </p>
 
       <p className="text-xs text-zinc-400 mb-3">Didn&apos;t receive it?</p>

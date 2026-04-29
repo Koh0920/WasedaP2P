@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { User } from "@/types";
-import { mockUsers } from "@/data/mockData";
+import { getCurrentUserApi, loginApi, logoutApi } from "@/services/api";
 
 interface AuthContextValue {
   user: User | null;
@@ -13,20 +13,47 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isHydrating, setIsHydrating] = useState(true);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const login = async (_email: string, _password: string) => {
-    // Mock auth — replace with real API call when backend is ready
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setUser(mockUsers[0]);
+  useEffect(() => {
+    let isMounted = true;
+
+    const restoreSession = async () => {
+      try {
+        const currentUser = await getCurrentUserApi();
+        if (isMounted) {
+          setUser(currentUser);
+        }
+      } catch {
+        if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsHydrating(false);
+        }
+      }
+    };
+
+    void restoreSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const authenticatedUser = await loginApi(email, password);
+    setUser(authenticatedUser);
   };
 
   const logout = () => {
+    void logoutApi();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: user !== null, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !isHydrating && user !== null, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
