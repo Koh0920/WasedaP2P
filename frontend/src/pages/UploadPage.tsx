@@ -69,7 +69,7 @@ export function UploadPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.courseName || !formData.professorName || !formData.fileName) {
+    if (!formData.courseName || !formData.professorName || !formData.file) {
       toast.error("Please fill in all required fields and attach a file.");
       return;
     }
@@ -96,6 +96,7 @@ export function UploadPage() {
         fileType,
         fileName: formData.fileName,
         description: formData.description,
+	file: formData.file!,
         uploader: {
           username: user?.username ?? "anonymous",
           id: user?.id ?? "0",

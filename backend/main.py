@@ -19,6 +19,8 @@ from passlib.context import CryptContext
 from db_login_crud import get_user_id, get_user_by_id, get_user_by_email, create_user, get_users, delete_user, get_user_role, mark_user_email_verified
 from db_folder_crud import create_folder, validate_folder_creation, delete_folder, get_folder, rename_folder
 from db_vote_crud import get_vote, create_vote, update_vote, delete_vote, get_vote_stats, update_votable_counts, validate_votable_exists, get_user_votes
+from notes_router import router as notes_router
+
 
 load_dotenv()
 
@@ -133,6 +135,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 
 # =========================
 # Utility functions
@@ -801,3 +805,5 @@ def get_my_votes(
             for v in votes
         ]
     }
+
+app.include_router(notes_router)

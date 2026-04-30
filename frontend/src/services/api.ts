@@ -87,7 +87,12 @@ function mapCurrentUserToFrontendUser(user: CurrentUserResponse): User {
  * Returns: Array of all notes with basic info (no file content, just metadata)
  */
 export async function getNotes(): Promise<Note[]> {
-  return Promise.resolve([...mockNotes]);
+  const response = await apiFetch("/api/notes");
+  const data = await response.json() as any[];
+  return data.map((n: any) => ({
+    ...n,
+    uploadDate: new Date(n.uploadDate),
+  }));
 }
 
 /**
@@ -97,9 +102,14 @@ export async function getNotes(): Promise<Note[]> {
  * Returns: Single note object or null if not found
  */
 export async function getNoteByIdApi(id: string): Promise<Note | null> {
-  return Promise.resolve(getNoteById(id) ?? null);
+  try {
+    const response = await apiFetch(`/api/notes/${id}`);
+    const data = await response.json() as any;
+    return { ...data, uploadDate: new Date(data.uploadDate) };
+  } catch {
+    return null;
+  }
 }
-
 /**
  * Get all notes uploaded by a specific user
  * Used on: ProfilePage (to show user's contributions)
@@ -107,9 +117,13 @@ export async function getNoteByIdApi(id: string): Promise<Note | null> {
  * Returns: Array of notes uploaded by that user
  */
 export async function getNotesByUploaderApi(username: string): Promise<Note[]> {
-  return Promise.resolve(getNotesByUploader(username));
+  const response = await apiFetch(`/api/notes?uploader=${username}`);
+  const data = await response.json() as any[];
+  return data.map((n: any) => ({
+    ...n,
+    uploadDate: new Date(n.uploadDate),
+  }));
 }
-
 /**
  * Upload a new note to the platform
  * Used on: UploadPage
@@ -127,19 +141,25 @@ export async function getNotesByUploaderApi(username: string): Promise<Note[]> {
  * }
  * Returns: The newly created note with generated id, scores, and uploadDate
  */
-export async function uploadNote(data: Omit<Note, "id" | "upvotes" | "downvotes" | "netScore" | "uploadDate">): Promise<Note> {
-  const newNote: Note = {
-    ...data,
-    id: `n${Date.now()}`,
-    upvotes: 0,
-    downvotes: 0,
-    netScore: 0,
-    uploadDate: new Date(),
-  };
-  mockNotes.unshift(newNote);
-  return Promise.resolve(newNote);
-}
+export async function uploadNote(data: Omit<Note, "id" | "upvotes" | "downvotes" | "netScore" | "uploadDate"> & { file: File }): Promise<Note> {
+  const formData = new FormData();
+  formData.append("courseName", data.courseName);
+  formData.append("professorName", data.professorName);
+  formData.append("faculty", data.faculty);
+  formData.append("department", data.department);
+  formData.append("year", String(data.year));
+  formData.append("semester", data.semester);
+  formData.append("fileType", data.fileType);
+  formData.append("description", data.description ?? "");
+  formData.append("file", data.file);
 
+  const response = await apiFetch("/api/notes", {
+    method: "POST",
+    body: formData,
+  });
+  const result = await response.json() as any;
+  return { ...result, uploadDate: new Date(result.uploadDate) };
+}
 /**
  * Vote on a note (upvote or downvote)
  * Used on: NoteCard, NoteListItem, NoteDetailPage
@@ -148,17 +168,12 @@ export async function uploadNote(data: Omit<Note, "id" | "upvotes" | "downvotes"
  * Returns: void (just update the count on frontend)
  */
 export async function voteNote(id: string, type: "up" | "down"): Promise<void> {
-  const note = mockNotes.find((n) => n.id === id);
-  if (!note) return;
-  if (type === "up") {
-    note.upvotes += 1;
-  } else {
-    note.downvotes += 1;
-  }
-  note.netScore = note.upvotes - note.downvotes;
-  return Promise.resolve();
+  await apiFetch(`/api/notes/${id}/vote`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type }),
+  });
 }
-
 /**
  * Report a note for inappropriate content
  * Used on: ReportButton component
@@ -169,15 +184,13 @@ export async function voteNote(id: string, type: "up" | "down"): Promise<void> {
  * Note: We don't really do anything with the response yet,
  * but you guys should probably store this for admin review
  */
-export async function reportNote(
-  _id: string,
-  _reason: string
-): Promise<void> {
-  // Backend will log and review this
-  return Promise.resolve();
+export async function reportNote(id: string, reason: string): Promise<void> {
+  await apiFetch(`/api/notes/${id}/report`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason }),
+  });
 }
-
-
 // USERS
 
 

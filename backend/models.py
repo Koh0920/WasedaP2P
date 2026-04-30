@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from db_init import Base
 import enum
 from datetime import datetime
+from models_notes import Note, NoteReport
 
 #shared_id_seq = Sequence("shared_id_seq")
 

@@ -48,7 +48,13 @@ export function NoteDetailPage() {
 
   const handleDownload = () => {
     toast.info(`Downloading ${note.fileName}…`);
-  };
+    const link = document.createElement("a");
+    link.href = `http://localhost:8000/api/notes/${note.id}/download`;
+    link.download = note.fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
