@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from db_init import get_db
@@ -11,15 +11,38 @@ from db_notes_crud import (
     get_note_file_path,
 )
 from pydantic import BaseModel
+import jwt
 import os
 
 router = APIRouter(prefix="/api/notes", tags=["notes"])
 
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+COOKIE_NAME = "access_token"
+
+
 class VoteRequest(BaseModel):
     type: str
 
+
 class ReportRequest(BaseModel):
     reason: str
+
+
+def get_current_user_id(request: Request, db: Session = Depends(get_db)) -> int:
+    token = request.cookies.get(COOKIE_NAME)
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return int(user_id)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 
 @router.get("")
@@ -65,6 +88,7 @@ async def upload_note(
     description: str = Form(""),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id),
 ):
     file_bytes = await file.read()
     result = create_note(
@@ -79,7 +103,7 @@ async def upload_note(
         description=description,
         file_bytes=file_bytes,
         file_name=file.filename,
-        uploader_id=1,
+        uploader_id=current_user_id,
     )
     return result
 
@@ -89,6 +113,7 @@ def vote(
     note_id: int,
     body: VoteRequest,
     db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id),
 ):
     if body.type not in ["up", "down"]:
         raise HTTPException(status_code=400, detail="type must be 'up' or 'down'")
@@ -103,8 +128,9 @@ def report(
     note_id: int,
     body: ReportRequest,
     db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id),
 ):
-    success = report_note(db, note_id, 1, body.reason)
+    success = report_note(db, note_id, current_user_id, body.reason)
     if not success:
         raise HTTPException(status_code=404, detail="Note not found")
     return {"message": "Report submitted successfully"}
