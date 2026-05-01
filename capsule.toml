@@ -1,26 +1,31 @@
 # ato capsule manifest for WasedaP2P
 #
 # Run with:
+#     export SECRET_KEY=$(openssl rand -hex 32)
 #     ato run . -y --sandbox
 #
 # Required ato CLI: 0.4.112 or later (the `python -m <module>` invocation
 # and the second-run `uv venv --clear` behaviour land in that release).
 #
-# Prerequisites NOT shipped with this capsule.toml — the consumer must
-# provide them on the host before `ato run`:
+# Env split (per ato best practice):
+#   - SECRET_KEY is the only per-user secret → declared as required_env
+#     and passed through from the host.
+#   - Everything else is app config → set directly in [targets.app.env]
+#     below.  Override per deployment by editing this file or by exporting
+#     the same name on the host (host env wins because the keys are also
+#     in [isolation].allow_env).
 #
-#   1. PostgreSQL 14+ reachable at the URL given by DATABASE_URL.
-#      The upstream backend uses `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`
-#      in db_init.py::ensure_schema_updates(), which is PostgreSQL-only
-#      syntax — SQLite will reject it. Until the upstream relaxes that,
-#      a real PostgreSQL is required.
+# Prerequisites NOT shipped with this capsule.toml:
+#
+#   1. PostgreSQL 14+ reachable at DATABASE_URL.  Upstream's
+#      db_init.py::ensure_schema_updates() uses
+#      `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` which SQLite rejects.
 #
 #          createdb wasedap2p
-#          export DATABASE_URL="postgresql+psycopg://$USER@localhost:5432/wasedap2p"
+#          # default DATABASE_URL below assumes localhost / current user
 #
 #   2. backend/requirements.txt — ato source/python provisioning needs
-#      either `uv.lock` or `requirements.txt` to install dependencies.
-#      The upstream repo currently ships neither.  A minimal set:
+#      either uv.lock or requirements.txt.  Minimal pin set we tested:
 #
 #          fastapi==0.115.6
 #          uvicorn==0.32.1
@@ -31,11 +36,6 @@
 #          argon2-cffi==23.1.0
 #          pyjwt==2.10.1
 #          python-multipart==0.0.20
-#
-#   3. SECRET_KEY env (any 32-byte hex string).  Optionally SMTP_*
-#      variables for the password-reset / email-verification flow.
-#
-#          export SECRET_KEY=$(openssl rand -hex 32)
 
 schema_version = "0.3"
 name           = "wasedap2p-backend"
@@ -50,33 +50,41 @@ author       = "itsukison"
 tags         = ["fastapi", "postgres", "waseda", "p2p"]
 
 # The frontend (React + Vite) is intentionally out of scope here:
-# it can be served via `cd frontend && npm install && npm run dev`
-# or wrapped in a separate capsule once the static-build pipeline is
-# stable.  Keeping this manifest focused on the backend keeps the
-# `ato run` flow tractable.
+# `cd frontend && npm install && npm run dev` keeps it simple, and a
+# separate capsule once the static-build pipeline is stable.
 
 [targets.app]
 runtime         = "source"
 driver          = "python"
 runtime_version = "3.11.10"
 working_dir     = "backend"
-# The upstream main.py defines the FastAPI `app` ASGI object but has no
-# `if __name__ == "__main__":` block, so we launch via `python -m
-# uvicorn`.  ato 0.4.112+ preserves the `-m` token end-to-end (see
-# `is_python_module_flag` in
+# main.py is an ASGI module without an `if __name__` block, so launch
+# via `python -m uvicorn`.  ato 0.4.112+ preserves the `-m` token
+# end-to-end (see `is_python_module_flag` in
 # crates/ato-cli/src/adapters/runtime/executors/source.rs).
 run  = "python -m uvicorn main:app --host 127.0.0.1 --port 8000"
 port = 8000
 
-required_env = ["SECRET_KEY", "DATABASE_URL"]
+# Only SECRET_KEY is a per-user secret.  Everything else is config and
+# lives in [targets.app.env] below.
+required_env = ["SECRET_KEY"]
 
 [targets.app.env]
-ALGORITHM    = "HS256"
-FRONTEND_URL = "http://localhost:5173"
+ALGORITHM       = "HS256"
+DATABASE_URL    = "postgresql+psycopg://postgres@localhost:5432/wasedap2p"
+FRONTEND_URL    = "http://localhost:5173"
+SMTP_HOST       = "smtp.gmail.com"
+SMTP_PORT       = "587"
+SMTP_USERNAME   = ""
+SMTP_PASSWORD   = ""
+SMTP_FROM_EMAIL = ""
+SMTP_USE_TLS    = "true"
+SMTP_USE_SSL    = "false"
 
 [isolation]
-# Pass these through from the consumer's host env so secrets are not
-# baked into the manifest.
+# Pass SECRET_KEY through from the host (the only true secret).  The
+# other names are listed so a host-side `export DATABASE_URL=…` can
+# override the TOML default without editing this file.
 allow_env = [
   "SECRET_KEY",
   "ALGORITHM",
@@ -92,6 +100,5 @@ allow_env = [
 ]
 
 [network]
-# uvicorn binds 127.0.0.1; the consumer can SMTP-send password-reset
-# mail through the host's smtp.gmail.com (or whatever SMTP_HOST is).
+# uvicorn binds 127.0.0.1; outbound only for SMTP.
 egress_allow = ["smtp.gmail.com"]
