@@ -15,27 +15,19 @@
 #     the same name on the host (host env wins because the keys are also
 #     in [isolation].allow_env).
 #
-# Prerequisites NOT shipped with this capsule.toml:
+# Prerequisite NOT shipped with this capsule:
 #
-#   1. PostgreSQL 14+ reachable at DATABASE_URL.  Upstream's
-#      db_init.py::ensure_schema_updates() uses
-#      `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` which SQLite rejects.
+#   PostgreSQL 14+ reachable at DATABASE_URL.  Upstream's
+#   db_init.py::ensure_schema_updates() uses
+#   `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` which SQLite rejects, so
+#   a real PostgreSQL is required until upstream relaxes that path.
 #
-#          createdb wasedap2p
-#          # default DATABASE_URL below assumes localhost / current user
+#       createdb wasedap2p
+#       # default DATABASE_URL below assumes localhost / current user
 #
-#   2. backend/requirements.txt — ato source/python provisioning needs
-#      either uv.lock or requirements.txt.  Minimal pin set we tested:
-#
-#          fastapi==0.115.6
-#          uvicorn==0.32.1
-#          sqlalchemy==2.0.36
-#          psycopg[binary]==3.2.3
-#          python-dotenv==1.0.1
-#          passlib[argon2]==1.7.4
-#          argon2-cffi==23.1.0
-#          pyjwt==2.10.1
-#          python-multipart==0.0.20
+# `backend/requirements.txt` IS shipped on this branch (upstream lacks
+# it), pinned to the set we tested.  ato source/python provisioning
+# picks it up automatically because we declare `working_dir = "backend"`.
 
 schema_version = "0.3"
 name           = "wasedap2p-backend"
