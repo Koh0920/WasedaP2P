@@ -53,7 +53,7 @@ tags         = ["fastapi", "postgres", "waseda", "p2p"]
 # v1 requires a 40-char commit SHA pin so the lock identity is reproducible.
 # Mutable refs (branches, tags) are rejected at lock time.
 [dependencies.db]
-capsule  = "capsule://github.com/Koh0920/ato-postgres@51b7f79c31e6bc29a7d4fde797726bb2af2dcb88"
+capsule  = "capsule://github.com/Koh0920/ato-postgres@65b3ee592e469742d5263ab2f228a518b43b4e70"
 contract = "service@1"
 
 # Identity-bearing parameters (RFC §7.3): these enter the consumer's
