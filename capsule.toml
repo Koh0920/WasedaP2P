@@ -49,14 +49,11 @@ tags         = ["fastapi", "postgres", "waseda", "p2p"]
 # file on first init, run pg_isready, then expose the resolved
 # DATABASE_URL to this capsule's target env.
 
-# NOTE: the URL parser in capsule-core's lockfile path currently expects
-# `capsule://ato/<publisher>/<slug>@<version>` (two path segments).
-# The RFC §4.2 short form `capsule://ato/postgres@16` (one segment) is
-# accepted by `verify_and_lock` but rejected by the registry fetch
-# parser (`parse_store_capsule_source`). Until that gap is closed, we
-# use the two-segment form pointing at the official registry namespace.
+# GitHub-sourced provider (capsule://github.com/<owner>/<repo>@<commit-sha>).
+# v1 requires a 40-char commit SHA pin so the lock identity is reproducible.
+# Mutable refs (branches, tags) are rejected at lock time.
 [dependencies.db]
-capsule  = "capsule://ato/ato-run/postgres@16"
+capsule  = "capsule://github.com/Koh0920/ato-postgres@51b7f79c31e6bc29a7d4fde797726bb2af2dcb88"
 contract = "service@1"
 
 # Identity-bearing parameters (RFC §7.3): these enter the consumer's
