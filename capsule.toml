@@ -113,7 +113,7 @@ SMTP_USE_SSL    = "false"
 [targets.web]
 runtime         = "source"
 driver          = "node"
-runtime_version = "20.12.0"
+runtime_version = "20.19.5"
 working_dir     = "frontend"
 # --strictPort: fail fast if 5173 is taken instead of silently rolling
 # to 5174 (where ato's port-bound readiness probe would never fire).
