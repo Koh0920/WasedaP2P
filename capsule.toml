@@ -2,28 +2,28 @@
 #
 # Run with:
 #     export SECRET_KEY=$(openssl rand -hex 32)
+#     export PG_PASSWORD=$(openssl rand -hex 16)
 #     ato run . -y --sandbox
 #
 # Required ato CLI: 0.4.112 or later (the `python -m <module>` invocation
 # and the second-run `uv venv --clear` behaviour land in that release).
 #
+# Postgres provisioning:
+#
+#   This capsule depends on `capsule://ato/postgres@16` via the v0.3
+#   dependency-contract grammar (`[dependencies.db]` below). When you
+#   run this capsule, ato auto-starts the postgres provider, materializes
+#   PG_PASSWORD as a host-side credential, and exposes the resulting
+#   DATABASE_URL via `{{deps.db.runtime_exports.DATABASE_URL}}` —
+#   no manual `createdb wasedap2p` or running PostgreSQL on the host.
+#
 # Env split (per ato best practice):
-#   - SECRET_KEY is the only per-user secret → declared as required_env
-#     and passed through from the host.
-#   - Everything else is app config → set directly in [targets.app.env]
-#     below.  Override per deployment by editing this file or by exporting
-#     the same name on the host (host env wins because the keys are also
-#     in [isolation].allow_env).
-#
-# Prerequisite NOT shipped with this capsule:
-#
-#   PostgreSQL 14+ reachable at DATABASE_URL.  Upstream's
-#   db_init.py::ensure_schema_updates() uses
-#   `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` which SQLite rejects, so
-#   a real PostgreSQL is required until upstream relaxes that path.
-#
-#       createdb wasedap2p
-#       # default DATABASE_URL below assumes localhost / current user
+#   - SECRET_KEY is the only per-user app secret.
+#   - PG_PASSWORD is the credential ato hands to the postgres provider.
+#     It does NOT appear in the consumer's env: the resolver embeds it
+#     into DATABASE_URL on the postgres side and the consumer only sees
+#     the redacted URL via runtime_exports.
+#   - Everything else is app config in [targets.app.env].
 #
 # `backend/requirements.txt` IS shipped on this branch (upstream lacks
 # it), pinned to the set we tested.  ato source/python provisioning
@@ -35,6 +35,10 @@ version        = "0.1.0"
 type           = "app"
 default_target = "app"
 
+# RFC §5.2: top-level required_env is the resolution scope for
+# {{env.X}} references inside [dependencies.*] blocks.
+required_env = ["PG_PASSWORD"]
+
 [metadata]
 display_name = "WasedaP2P (backend)"
 description  = "Waseda peer-to-peer notes & folders sharing app — FastAPI backend"
@@ -45,6 +49,24 @@ tags         = ["fastapi", "postgres", "waseda", "p2p"]
 # `cd frontend && npm install && npm run dev` keeps it simple, and a
 # separate capsule once the static-build pipeline is stable.
 
+# ── PostgreSQL dependency ──────────────────────────────────────────────
+# RFC CAPSULE_DEPENDENCY_CONTRACTS.md §11.1 grammar.  ato resolves this
+# to the `ato/postgres@16` provider capsule, starts it as a sidecar
+# during `ato run`, and exposes its connection details under
+# {{deps.db.runtime_exports.*}}.
+[dependencies.db]
+capsule  = "capsule://ato/postgres@16"
+contract = "service@1"
+
+  [dependencies.db.parameters]
+  database = "wasedap2p"
+
+  [dependencies.db.credentials]
+  password = "{{env.PG_PASSWORD}}"
+
+  [dependencies.db.state]
+  name = "data"
+
 [targets.app]
 runtime         = "source"
 driver          = "python"
@@ -54,16 +76,17 @@ working_dir     = "backend"
 # via `python -m uvicorn`.  ato 0.4.112+ preserves the `-m` token
 # end-to-end (see `is_python_module_flag` in
 # crates/ato-cli/src/adapters/runtime/executors/source.rs).
-run  = "python -m uvicorn main:app --host 127.0.0.1 --port 8000"
-port = 8000
-
-# Only SECRET_KEY is a per-user secret.  Everything else is config and
-# lives in [targets.app.env] below.
+run          = "python -m uvicorn main:app --host 127.0.0.1 --port 8000"
+port         = 8000
+needs        = ["db"]
 required_env = ["SECRET_KEY"]
 
 [targets.app.env]
 ALGORITHM       = "HS256"
-DATABASE_URL    = "postgresql+psycopg://postgres@localhost:5432/wasedap2p"
+# Resolved at run time from the postgres provider's runtime_exports.
+# The provider builds this URL with the password materialized from
+# PG_PASSWORD — the consumer never sees the raw credential.
+DATABASE_URL    = "{{deps.db.runtime_exports.DATABASE_URL}}"
 FRONTEND_URL    = "http://localhost:5173"
 SMTP_HOST       = "smtp.gmail.com"
 SMTP_PORT       = "587"
@@ -74,22 +97,13 @@ SMTP_USE_TLS    = "true"
 SMTP_USE_SSL    = "false"
 
 [isolation]
-# Pass SECRET_KEY through from the host (the only true secret).  The
-# other names are listed so a host-side `export DATABASE_URL=…` can
-# override the TOML default without editing this file.
-allow_env = [
-  "SECRET_KEY",
-  "ALGORITHM",
-  "DATABASE_URL",
-  "FRONTEND_URL",
-  "SMTP_HOST",
-  "SMTP_PORT",
-  "SMTP_USERNAME",
-  "SMTP_PASSWORD",
-  "SMTP_FROM_EMAIL",
-  "SMTP_USE_TLS",
-  "SMTP_USE_SSL",
-]
+# SECRET_KEY: target reads directly via env injection.
+# PG_PASSWORD intentionally NOT in allow_env: the credential resolver
+# pulls it from the host env into ato runtime memory only, materializes
+# via Rule M1 TempFile for the postgres provider, and the consumer
+# never sees the raw value (DATABASE_URL is exposed via runtime_exports
+# with secret = true, so it is also redacted in logs).
+allow_env = ["SECRET_KEY"]
 
 [network]
 # uvicorn binds 127.0.0.1; outbound only for SMTP.
