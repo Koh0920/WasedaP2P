@@ -111,9 +111,10 @@ SMTP_USE_SSL    = "false"
 # Vite picks up frontend/.env (VITE_API_URL=http://localhost:8000) on
 # its own — no env injection needed from ato.
 [targets.web]
-runtime     = "source"
-driver      = "node"
-working_dir = "frontend"
+runtime         = "source"
+driver          = "node"
+runtime_version = "20.12.0"
+working_dir     = "frontend"
 # --strictPort: fail fast if 5173 is taken instead of silently rolling
 # to 5174 (where ato's port-bound readiness probe would never fire).
 run  = "npm run dev -- --host 127.0.0.1 --port 5173 --strictPort"
