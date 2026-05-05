@@ -4,6 +4,7 @@
 #     export SECRET_KEY=$(openssl rand -hex 32)
 #     export PG_PASSWORD=$(openssl rand -hex 16)
 #     ato run . -y --sandbox
+#     ato run . -y --sandbox --target web
 #
 # Required ato CLI: 0.4.112 or later (the `python -m <module>` invocation
 # and the second-run `uv venv --clear` behaviour land in that release).
@@ -45,9 +46,9 @@ description  = "Waseda peer-to-peer notes & folders sharing app — FastAPI back
 author       = "itsukison"
 tags         = ["fastapi", "postgres", "waseda", "p2p"]
 
-# The frontend (React + Vite) is intentionally out of scope here:
-# `cd frontend && npm install && npm run dev` keeps it simple, and a
-# separate capsule once the static-build pipeline is stable.
+# The frontend (React + Vite) is a second source target in the same
+# capsule.  Backend remains the default target; run the frontend with
+# `ato run --target web` from the same commit.
 
 # ── PostgreSQL dependency ──────────────────────────────────────────────
 # RFC CAPSULE_DEPENDENCY_CONTRACTS.md §11.1 grammar.  ato resolves this
@@ -103,6 +104,20 @@ SMTP_PASSWORD   = ""
 SMTP_FROM_EMAIL = ""
 SMTP_USE_TLS    = "true"
 SMTP_USE_SSL    = "false"
+
+# ── Frontend (Vite dev server) ─────────────────────────────────────────
+# Runs `npm run dev` (= vite) on :5173. ato source/node provisioning
+# auto-runs `npm ci` against frontend/package-lock.json before launch.
+# Vite picks up frontend/.env (VITE_API_URL=http://localhost:8000) on
+# its own — no env injection needed from ato.
+[targets.web]
+runtime     = "source"
+driver      = "node"
+working_dir = "frontend"
+# --strictPort: fail fast if 5173 is taken instead of silently rolling
+# to 5174 (where ato's port-bound readiness probe would never fire).
+run  = "npm run dev -- --host 127.0.0.1 --port 5173 --strictPort"
+port = 5173
 
 [isolation]
 # SECRET_KEY: target reads directly via env injection.
