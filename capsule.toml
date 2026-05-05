@@ -51,11 +51,19 @@ tags         = ["fastapi", "postgres", "waseda", "p2p"]
 
 # ── PostgreSQL dependency ──────────────────────────────────────────────
 # RFC CAPSULE_DEPENDENCY_CONTRACTS.md §11.1 grammar.  ato resolves this
-# to the `ato/postgres@16` provider capsule, starts it as a sidecar
-# during `ato run`, and exposes its connection details under
+# to the Koh0920/ato-postgres provider capsule (commit-pinned for
+# reproducibility per HASH_AND_PROVENANCE_POLICY), starts it as a
+# sidecar during `ato run`, and exposes its connection details under
 # {{deps.db.runtime_exports.*}}.
+#
+# The `capsule://ato/<slug>@<v>` short form (terse registry alias) is
+# the eventual canonical form, but the parser at
+# crates/capsule-core/src/contract/lockfile.rs:1085 currently expects
+# publisher/slug 2-segment URLs, and the `ato/postgres@16` provider is
+# not yet published to api.ato.run. Pinning the github source directly
+# side-steps both.
 [dependencies.db]
-capsule  = "capsule://ato/postgres@16"
+capsule  = "capsule://github.com/Koh0920/ato-postgres@65b3ee592e469742d5263ab2f228a518b43b4e70"
 contract = "service@1"
 
   [dependencies.db.parameters]
