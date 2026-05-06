@@ -70,7 +70,7 @@ tags         = ["fastapi", "postgres", "waseda", "p2p"]
 # not yet published to api.ato.run. Pinning the github source directly
 # side-steps both.
 [dependencies.db]
-capsule  = "capsule://github.com/Koh0920/ato-postgres@65b3ee592e469742d5263ab2f228a518b43b4e70"
+capsule  = "capsule://github.com/Koh0920/ato-postgres@203391e1f2373e051cc85eea809b01c2c4274411"
 contract = "service@1"
 
   [dependencies.db.parameters]
