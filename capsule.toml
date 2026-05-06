@@ -4,7 +4,13 @@
 #     export SECRET_KEY=$(openssl rand -hex 32)
 #     export PG_PASSWORD=$(openssl rand -hex 16)
 #     ato run . -y --sandbox
-#     ato run . -y --sandbox --target web
+#
+# A single `ato run` brings up the full stack: postgres provider via
+# the dep contract, FastAPI backend (services.main → targets.app), and
+# the Vite frontend (services.web → targets.web, depends_on the backend
+# being ready). To launch a single target instead, use `--target app`
+# or `--target web`; the orchestration mode below only fires when no
+# explicit target is selected.
 #
 # Required ato CLI: 0.4.112 or later (the `python -m <module>` invocation
 # and the second-run `uv venv --clear` behaviour land in that release).
@@ -119,6 +125,33 @@ working_dir     = "frontend"
 # to 5174 (where ato's port-bound readiness probe would never fire).
 run  = "npm run dev -- --host 127.0.0.1 --port 5173 --strictPort"
 port = 5173
+
+# ── Orchestration mode (services) ─────────────────────────────────────
+# `[services]` declarations make `ato run` (no --target) bring up the
+# whole stack in topological order. `services.main` is the canonical
+# anchor (required by ato's orchestration validator) — we point it at
+# the backend so the run is gated on the FastAPI being ready before
+# Vite's HMR proxy comes up. The `web` service waits for `main`'s
+# readiness probe so the frontend is launched against a live API.
+#
+# `--target app` / `--target web` keeps working: passing an explicit
+# target opts out of orchestration and runs that single target, which
+# is the dev-iteration ergonomic. needs-gating (50ce3849) means the
+# `--target web` solo path still skips the postgres provider.
+[services.main]
+target = "app"
+
+[services.main.readiness_probe]
+http_get = "/docs"
+port = "PORT"
+
+[services.web]
+target = "web"
+depends_on = ["main"]
+
+[services.web.readiness_probe]
+tcp_connect = "127.0.0.1"
+port = "PORT"
 
 [isolation]
 # SECRET_KEY: target reads directly via env injection.
