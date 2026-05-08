@@ -12,17 +12,24 @@
 # or `--target web`; the orchestration mode below only fires when no
 # explicit target is selected.
 #
-# Required ato CLI: 0.4.112 or later (the `python -m <module>` invocation
-# and the second-run `uv venv --clear` behaviour land in that release).
+# Required ato CLI: 0.5.x or later (clean-host postgres provider via
+# tool_artifacts; see ato-run/ato#119, #120, #92). Older clients
+# (< 0.5.x) cannot run this capsule because the Koh0920/ato-postgres
+# commit pinned below requires the ATO_TOOL_* env contract.
 #
 # Postgres provisioning:
 #
-#   This capsule depends on `capsule://ato/postgres@16` via the v0.3
-#   dependency-contract grammar (`[dependencies.db]` below). When you
-#   run this capsule, ato auto-starts the postgres provider, materializes
-#   PG_PASSWORD as a host-side credential, and exposes the resulting
-#   DATABASE_URL via `{{deps.db.runtime_exports.DATABASE_URL}}` —
-#   no manual `createdb wasedap2p` or running PostgreSQL on the host.
+#   This capsule depends on the migrated Koh0920/ato-postgres
+#   (commit 1994217) via the v0.3 dependency-contract grammar
+#   (`[dependencies.db]` below). When you run this capsule, ato
+#   downloads + sha256-verifies a relocatable PostgreSQL distribution
+#   into $ATO_HOME/store/tools/, starts the postgres provider as a
+#   sidecar with ATO_TOOL_INITDB / POSTGRES / PG_CTL injected into its
+#   env, materializes PG_PASSWORD as a host-side credential, and
+#   exposes the resulting DATABASE_URL via
+#   `{{deps.db.runtime_exports.DATABASE_URL}}` — no host package
+#   manager, no manual `createdb wasedap2p`, no running PostgreSQL on
+#   the host.
 #
 # Env split (per ato best practice):
 #   - SECRET_KEY is the only per-user app secret.
@@ -69,8 +76,15 @@ tags         = ["fastapi", "postgres", "waseda", "p2p"]
 # publisher/slug 2-segment URLs, and the `ato/postgres@16` provider is
 # not yet published to api.ato.run. Pinning the github source directly
 # side-steps both.
+#
+# Pinned to 1994217 — the migrated provider that consumes ATO_TOOL_*
+# (Koh0920/ato-postgres#1, ato-run/ato#119, #120). Pre-migration pins
+# (e.g. 203391e) require Homebrew PostgreSQL on the host and will fail
+# the clean-host gate ato-run/ato#92 demands. Bump this SHA whenever
+# Koh0920/ato-postgres main advances; ato-cli 0.5.x supplies the
+# tool artifact contract this commit requires.
 [dependencies.db]
-capsule  = "capsule://github.com/Koh0920/ato-postgres@203391e1f2373e051cc85eea809b01c2c4274411"
+capsule  = "capsule://github.com/Koh0920/ato-postgres@19942174f58268fb5cf77c3d579b8f86e2c89a4d"
 contract = "service@1"
 
   [dependencies.db.parameters]
