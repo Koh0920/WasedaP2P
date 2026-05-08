@@ -20,7 +20,7 @@
 # Postgres provisioning:
 #
 #   This capsule depends on the migrated Koh0920/ato-postgres
-#   (commit 1994217) via the v0.3 dependency-contract grammar
+#   (commit d8145039) via the v0.3 dependency-contract grammar
 #   (`[dependencies.db]` below). When you run this capsule, ato
 #   downloads + sha256-verifies a relocatable PostgreSQL distribution
 #   into $ATO_HOME/store/tools/, starts the postgres provider as a
@@ -84,7 +84,7 @@ tags         = ["fastapi", "postgres", "waseda", "p2p"]
 # Koh0920/ato-postgres main advances; ato-cli 0.5.x supplies the
 # tool artifact contract this commit requires.
 [dependencies.db]
-capsule  = "capsule://github.com/Koh0920/ato-postgres@19942174f58268fb5cf77c3d579b8f86e2c89a4d"
+capsule  = "capsule://github.com/Koh0920/ato-postgres@d8145039843893ff5dd2fe053468e8e9097f1053"
 contract = "service@1"
 
   [dependencies.db.parameters]
