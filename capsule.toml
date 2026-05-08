@@ -77,10 +77,12 @@ tags         = ["fastapi", "postgres", "waseda", "p2p"]
 # not yet published to api.ato.run. Pinning the github source directly
 # side-steps both.
 #
-# Pinned to 1994217 — the migrated provider that consumes ATO_TOOL_*
-# (Koh0920/ato-postgres#1, ato-run/ato#119, #120). Pre-migration pins
-# (e.g. 203391e) require Homebrew PostgreSQL on the host and will fail
-# the clean-host gate ato-run/ato#92 demands. Bump this SHA whenever
+# Pinned to d8145039 — the post-merge canonical main of the migrated
+# provider that consumes ATO_TOOL_* (Koh0920/ato-postgres#1 squash-
+# merged from migrate/clean-host-postgres-tool-artifacts; refs
+# ato-run/ato#119, #120, #121, #92). Pre-migration pins (e.g. 203391e)
+# require Homebrew PostgreSQL on the host and will fail the clean-host
+# gate ato-run/ato#92 demands. Bump this SHA whenever
 # Koh0920/ato-postgres main advances; ato-cli 0.5.x supplies the
 # tool artifact contract this commit requires.
 [dependencies.db]
